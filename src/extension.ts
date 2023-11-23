@@ -4,24 +4,30 @@ import * as vscode from "vscode";
 import * as path from "path";
 
 type RuleItem = [string, string];
+type Configuration = {
+  maxInputLength: number;
+  configJsonUrl: string | null;
+};
 
 // 当前活动文件的扩展名
 let currentFileExtension: string | null = "";
 // 存储用户输入
 let inputTextArr: String[] = [];
 // 存储的最大值
-const maxInputLength: number = 6;
+let maxInputLength: number = 6;
 // 是否在修改文档
 let isProcessingDocumentChange: boolean = false;
+// 配置文件在本地的地址
+let localProfileAddress: string = "";
 /**
  * 匹配规则
  * ! 注意将字符串当正则使用时的语法问题
  */
-const rules: { [key: string]: RuleItem[] } = {
-  "tmp-cp": [
-    ["\\s+computed:\\s*{", "value2(){return 2},"],
-    ["\\s+watch:\\s*{", "text: 2,"],
-  ],
+let rules: { [key: string]: RuleItem[] } = {
+  // "tmp-cp": [
+  //   ["\\s+computed:\\s*{", "value2(){return 2},"],
+  //   ["\\s+watch:\\s*{", "text: 2,"],
+  // ],
 };
 
 // This method is called when your extension is activated
@@ -50,10 +56,25 @@ function onDocumentOpened(document: vscode.TextDocument) {
 }
 
 // 初始化插件
-function initializeExtension() {
+async function initializeExtension() {
   // 在这里执行插件启动时的初始化代码
   console.log("Extension initialized!");
 
+  // 加载用户配置
+  const settings = vscode.workspace.getConfiguration(
+    "template"
+  ) as unknown as Configuration;
+  maxInputLength = settings.maxInputLength || 6;
+  if (settings.configJsonUrl) {
+    // TODO: 处理一些边界情况，比如有地址无文件，文件不是json等
+    localProfileAddress = settings.configJsonUrl;
+    const document = await vscode.workspace.openTextDocument(localProfileAddress);
+    rules = JSON.parse(document.getText());
+  } else {
+    // TODO: 提示未配置规则文件的本地地址
+  }
+
+  // 获取当前文件的扩展名
   currentFileExtension = getCurrentFileExtension();
 }
 
