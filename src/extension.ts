@@ -3,17 +3,24 @@
 import * as vscode from "vscode";
 import * as path from "path";
 
+type RuleItem = [string, string];
+
 // 当前活动文件的扩展名
 let currentFileExtension: string | null = "";
-// 用户输入
+// 存储用户输入
 let inputTextArr: String[] = [];
+// 存储的最大值
+const maxInputLength: number = 6;
 // 是否在修改文档
 let isProcessingDocumentChange: boolean = false;
-// 匹配规则
-const rules: { [key: string]: [RegExp, string][] } = {
+/**
+ * 匹配规则
+ * ! 注意将字符串当正则使用时的语法问题
+ */
+const rules: { [key: string]: RuleItem[] } = {
   "tmp-cp": [
-    [/\s+computed:\s*{/, "value2(){return 2},"],
-    [/\s+watch:\s*{/, "text: 2,"],
+    ["\\s+computed:\\s*{", "value2(){return 2},"],
+    ["\\s+watch:\\s*{", "text: 2,"],
   ],
 };
 
@@ -64,8 +71,8 @@ function onDocumentChanged(event: vscode.TextDocumentChangeEvent) {
   // 获取用户最后一次的输入
   const userInput = event.contentChanges[event.contentChanges.length - 1];
 
-  // 存储最近6次的用户输入
-  if (inputTextArr.length >= 6) {
+  // 存储最近 maxInputLength 次的用户输入
+  if (inputTextArr.length >= maxInputLength) {
     inputTextArr.shift();
   }
   inputTextArr.push(userInput.text);
@@ -174,8 +181,8 @@ async function dealFile(currentFileText: string, inputText: string) {
   }
 }
 
-function insertTextInComputed(originalText: string, rule: [RegExp, string]) {
-  const regex = rule[0];
+function insertTextInComputed(originalText: string, rule: RuleItem) {
+  const regex = new RegExp(rule[0]);
   const match = originalText.match(regex);
 
   if (match && match.index !== undefined) {
