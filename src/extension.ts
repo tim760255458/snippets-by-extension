@@ -125,14 +125,19 @@ async function loadConfig() {
   ) as unknown as Configuration;
   maxInputLength = settings.maxInputLength || 6;
   if (settings.configJsonUrl) {
-    // TODO: 处理一些边界情况，比如有地址无文件，文件不是json等
     localProfileAddress = settings.configJsonUrl;
-    const document = await vscode.workspace.openTextDocument(
-      localProfileAddress
-    );
-    rules = JSON.parse(document.getText());
+    try {
+      const document = await vscode.workspace.openTextDocument(
+        localProfileAddress
+      );
+      rules = JSON.parse(document.getText());
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        "读取规则文件出错：规则文件地址错误或者规则文件不是合规的 json 文件"
+      );
+    }
   } else {
-    // TODO: 提示未配置规则文件的本地地址
+    vscode.window.showWarningMessage("未配置规则文件的本地地址");
   }
 }
 
