@@ -44,6 +44,11 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(onDocumentChanged)
   );
+
+  // 注册活动文档编辑器更改事件监听器
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(onActiveTextEditorChanged)
+  );
 }
 
 // 文档被打开时回调
@@ -52,30 +57,7 @@ function onDocumentOpened(document: vscode.TextDocument) {
   console.log(`Document opened: ${document.fileName}`);
 
   // 在这里执行你的初始化代码
-  initializeExtension();
-}
-
-// 初始化插件
-async function initializeExtension() {
-  // 在这里执行插件启动时的初始化代码
-  console.log("Extension initialized!");
-
-  // 加载用户配置
-  const settings = vscode.workspace.getConfiguration(
-    "template"
-  ) as unknown as Configuration;
-  maxInputLength = settings.maxInputLength || 6;
-  if (settings.configJsonUrl) {
-    // TODO: 处理一些边界情况，比如有地址无文件，文件不是json等
-    localProfileAddress = settings.configJsonUrl;
-    const document = await vscode.workspace.openTextDocument(localProfileAddress);
-    rules = JSON.parse(document.getText());
-  } else {
-    // TODO: 提示未配置规则文件的本地地址
-  }
-
-  // 获取当前文件的扩展名
-  currentFileExtension = getCurrentFileExtension();
+  // initializeExtension();
 }
 
 // 文档内容改变时的回调
@@ -116,6 +98,44 @@ function onDocumentChanged(event: vscode.TextDocumentChangeEvent) {
   }
 }
 
+// 文档编辑器改变时的回调
+function onActiveTextEditorChanged(event: vscode.TextEditor | undefined) {
+  if (event) {
+    // 获取当前文件的扩展名
+    getCurrentFileExtension();
+  }
+}
+
+// 初始化插件
+async function initializeExtension() {
+  // 在这里执行插件启动时的初始化代码
+  console.log("Extension initialized!");
+
+  // 加载用户配置
+  loadConfig();
+
+  // 获取当前文件的扩展名
+  getCurrentFileExtension();
+}
+
+// 加载用户配置
+async function loadConfig() {
+  const settings = vscode.workspace.getConfiguration(
+    "template"
+  ) as unknown as Configuration;
+  maxInputLength = settings.maxInputLength || 6;
+  if (settings.configJsonUrl) {
+    // TODO: 处理一些边界情况，比如有地址无文件，文件不是json等
+    localProfileAddress = settings.configJsonUrl;
+    const document = await vscode.workspace.openTextDocument(
+      localProfileAddress
+    );
+    rules = JSON.parse(document.getText());
+  } else {
+    // TODO: 提示未配置规则文件的本地地址
+  }
+}
+
 // 获取当前活动文件的扩展名
 function getCurrentFileExtension() {
   // 获取当前活动的文本编辑器
@@ -132,9 +152,9 @@ function getCurrentFileExtension() {
     // 使用 path 模块获取文件扩展名
     const fileExtension = path.extname(filePath);
 
-    return fileExtension.slice(1);
+    currentFileExtension = fileExtension.slice(1);
   } else {
-    return null;
+    currentFileExtension = null;
   }
 }
 
@@ -202,6 +222,7 @@ async function dealFile(currentFileText: string, inputText: string) {
   }
 }
 
+// 根据规则处理文档
 function insertTextInComputed(originalText: string, rule: RuleItem) {
   const regex = new RegExp(rule[0]);
   const match = originalText.match(regex);
