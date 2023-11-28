@@ -4,13 +4,17 @@ import * as vscode from "vscode";
 import * as path from "path";
 
 type RuleItem = [string, string];
+type RuleObj = { [key: string]: { default: string; rules: RuleItem[] } };
+type RuleStore = {
+  [key: string]: RuleObj;
+};
 type Configuration = {
   maxInputLength: number;
   configJsonUrl: string | null;
 };
 
 // 当前活动文件的扩展名
-let currentFileExtension: string | null = "";
+let currentFileExtension: string = "";
 // 存储用户输入
 let inputTextArr: String[] = [];
 // 存储的最大值
@@ -21,13 +25,18 @@ let isProcessingDocumentChange: boolean = false;
 let localProfileAddress: string = "";
 /**
  * 匹配规则
- * ! 注意将字符串当正则使用时的语法问题
+ * ! 注意将字符串当正则使用时的语法问题，需要在特殊字符前加\
  */
-let rules: { [key: string]: RuleItem[] } = {
-  // "tmp-cp": [
-  //   ["\\s+computed:\\s*{", "value2(){return 2},"],
-  //   ["\\s+watch:\\s*{", "text: 2,"],
-  // ],
+let rules: RuleStore = {
+  // "vue": {
+  //   "tmp-cp": {
+  //     default: "",
+  //     rules: [
+  //       ["\\s+computed:\\s*{", "value2(){return 2},"],
+  //       ["\\s+watch:\\s*{", "text: 2,"],
+  //     ],
+  //   },
+  // }
 };
 
 // This method is called when your extension is activated
@@ -67,9 +76,10 @@ function onDocumentChanged(event: vscode.TextDocumentChangeEvent) {
   }
 
   // 只处理vue文件
-  if (currentFileExtension !== "vue") {
-    return;
-  }
+  // TODO:
+  // if (currentFileExtension !== "vue") {
+  //   return;
+  // }
 
   // 获取用户最后一次的输入
   const userInput = event.contentChanges[event.contentChanges.length - 1];
@@ -82,15 +92,17 @@ function onDocumentChanged(event: vscode.TextDocumentChangeEvent) {
 
   // 根据规则处理文件
   const inputText = inputTextArr.join("");
-  if (Object.keys(rules).includes(inputText)) {
+  const rulesObj = rules[currentFileExtension];
+  if (Object.keys(rulesObj).includes(inputText)) {
     isProcessingDocumentChange = true;
 
     // 文件的最新内容
     const currentFileText = event.document.getText();
 
-    // 去除输入的标志
+    // 去除输入的标志，替换为 default 的值
     const removedText =
       currentFileText.slice(0, userInput.rangeOffset - inputText.length + 1) +
+      (rulesObj[inputText].default || "") +
       currentFileText.slice(userInput.rangeOffset + 1);
 
     // 根据规则处理文件
@@ -103,6 +115,9 @@ function onActiveTextEditorChanged(event: vscode.TextEditor | undefined) {
   if (event) {
     // 获取当前文件的扩展名
     getCurrentFileExtension();
+    // 清空存储的输入
+    clearInput();
+    isProcessingDocumentChange = false;
   }
 }
 
@@ -118,7 +133,7 @@ async function initializeExtension() {
   getCurrentFileExtension();
 }
 
-// 加载用户配置
+// 从规则文件夹内加载用户配置
 async function loadConfig() {
   const settings = vscode.workspace.getConfiguration(
     "template"
@@ -127,17 +142,35 @@ async function loadConfig() {
   if (settings.configJsonUrl) {
     localProfileAddress = settings.configJsonUrl;
     try {
-      const document = await vscode.workspace.openTextDocument(
-        localProfileAddress
+      const files = await vscode.workspace.fs.readDirectory(
+        vscode.Uri.file(localProfileAddress)
       );
-      rules = JSON.parse(document.getText());
+      if (files.length) {
+        files.forEach(([fileName]) =>
+          loadConfigByPath(localProfileAddress, fileName)
+        );
+      } else {
+        vscode.window.showWarningMessage("规则文件夹内没有配置文件");
+      }
     } catch (error) {
-      vscode.window.showErrorMessage(
-        "读取规则文件出错：规则文件地址错误或者规则文件不是合规的 json 文件"
-      );
+      vscode.window.showWarningMessage("读取本地规则文件夹时出错");
     }
   } else {
-    vscode.window.showWarningMessage("未配置规则文件的本地地址");
+    vscode.window.showWarningMessage("未配置规则文件的本地文件夹地址");
+  }
+}
+// 根据地址加载配置
+async function loadConfigByPath(localProfileAddress: string, filePath: string) {
+  try {
+    const fileName = filePath.slice(0, filePath.lastIndexOf("."));
+    const document = await vscode.workspace.openTextDocument(
+      localProfileAddress + filePath
+    );
+    rules[fileName] = JSON.parse(document.getText());
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      "读取规则文件出错：规则文件地址错误或者规则文件不是合规的 json 文件"
+    );
   }
 }
 
@@ -159,7 +192,7 @@ function getCurrentFileExtension() {
 
     currentFileExtension = fileExtension.slice(1);
   } else {
-    currentFileExtension = null;
+    currentFileExtension = "";
   }
 }
 
@@ -194,7 +227,7 @@ async function dealFile(currentFileText: string, inputText: string) {
   try {
     const editor = vscode.window.activeTextEditor;
     if (editor) {
-      const ruleArr = rules[inputText];
+      const ruleArr = rules[currentFileExtension][inputText].rules || [];
       let newText = currentFileText;
       ruleArr.forEach((rule) => {
         newText = insertTextInComputed(newText, rule);
@@ -224,6 +257,7 @@ async function dealFile(currentFileText: string, inputText: string) {
     vscode.window.showErrorMessage("some thing is wrong.");
   } finally {
     isProcessingDocumentChange = false;
+    clearInput();
   }
 }
 
@@ -243,6 +277,11 @@ function insertTextInComputed(originalText: string, rule: RuleItem) {
 
   // 如果没有匹配到模式，则直接返回原始文本
   return originalText;
+}
+
+// 清空存储的用户输入
+function clearInput() {
+  inputTextArr = [];
 }
 
 // This method is called when your extension is deactivated
