@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "template" extension will be documented in this file.
+All notable changes to the "snippets by extension" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 

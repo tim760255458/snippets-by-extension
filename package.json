@@ -1,13 +1,23 @@
 {
-  "name": "template",
-  "displayName": "template",
-  "description": "Create and manage templates based on file types",
+  "name": "snippets-by-extension",
+  "displayName": "snippets by extension",
+  "description": "A single instruction inserts code snippets in multiple places, based on file extension matching",
+  "icon": "images/logo.png",
   "version": "0.0.1",
+  "publisher": "tim_buer",
   "engines": {
     "vscode": "^1.84.0"
   },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "Snippets",
+    "Multiple Snippets"
+  ],
   "categories": [
-    "Other"
+    "Snippets"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -16,17 +26,17 @@
   "contributes": {
     "commands": [],
     "configuration": {
-      "title": "template",
+      "title": "snippets-by-extension",
       "properties": {
-        "template.maxInputLength": {
+        "snippets-by-extension.maxInputLength": {
           "type": "number",
           "default": 6,
           "description": "The maximum length of the instruction"
         },
-        "template.configJsonUrl": {
+        "snippets-by-extension.configJsonUrl": {
           "type": "string",
           "default": null,
-          "description": "The local address of the profile"
+          "description": "The folder address of the configuration file"
         }
       }
     }
@@ -40,7 +50,9 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "build": "vsce package -o snippets-by-extension-$npm_package_version.vsix",
+    "install": "pnpm build && code --install-extension snippets-by-extension-$npm_package_version.vsix"
   },
   "devDependencies": {
     "@types/vscode": "^1.84.0",

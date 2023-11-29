@@ -1,33 +1,55 @@
-# template README
+# snippets by extension
 
-This is the README for your extension "template". After writing up a brief description, we recommend including the following sections.
+A single instruction inserts code snippets in multiple places, based on file extension matching
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+When you enter a directive, you can insert the template in multiple places in the file according to the configured rules
 
-For example if there is an image subfolder under your extension project workspace:
+![test](/images/test.gif)
 
-\!\[feature X\]\(images/feature-x.png\)
+<!-- ## Requirements
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+If you have any requirements or dependencies, add a section describing those and how to install and configure them. -->
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+* `snippets-by-extension.maxInputLength`: The maximum length of the instruction (default 6).
+* `snippets-by-extension.configJsonUrl`: Required, folder address of the configuration file.
 
-## Known Issues
+## Configuration description
+
+> Note: Formatting issues when regular expressions are written as strings
+>
+> Note: When adding rules to different file extensions, you need to create a JOSN file and name it with the file extension
+
+```json
+// The plugin matches the rules based on the name of the profile
+// Like the vue.json file below, the plugin will use the rules when editing the .vue file
+
+// vue.json
+{
+  "tmp-cp": {
+    "default": [
+      "<div id=\"test\"></div>"
+    ],
+    "rules": [
+      ["\\s+computed:\\s*{", [
+        "value2() {",
+        "  return 2;",
+        "},"
+      ]],
+      ["\\s+watch:\\s*{", [
+        "text: 2"
+      ]]
+    ]
+  }
+}
+```
+
+<!-- ## Known Issues
 
 Calling out known issues can help limit users opening duplicate issues against your extension.
 
@@ -47,9 +69,9 @@ Fixed issue #.
 
 Added features X, Y, and Z.
 
----
+--- -->
 
-## Following extension guidelines
+<!-- ## Following extension guidelines
 
 Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
 
@@ -66,6 +88,6 @@ You can author your README using Visual Studio Code. Here are some useful editor
 ## For more information
 
 * [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/) -->
 
 **Enjoy!**

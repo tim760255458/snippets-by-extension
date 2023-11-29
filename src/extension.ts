@@ -3,8 +3,13 @@
 import * as vscode from "vscode";
 import * as path from "path";
 
-type RuleItem = [string, string];
-type RuleObj = { [key: string]: { default: string; rules: RuleItem[] } };
+/**
+ * TODO:
+ * 1. 用户连续输入时如何匹配规则，比如规则匹配epd，当用户输入xyzepd/xepdy时如何匹配。参考vue vscode snippets 如何处理的
+ */
+
+type RuleItem = [string, string[]];
+type RuleObj = { [key: string]: { default: string[]; rules: RuleItem[] } };
 type RuleStore = {
   [key: string]: RuleObj;
 };
@@ -102,7 +107,7 @@ function onDocumentChanged(event: vscode.TextDocumentChangeEvent) {
     // 去除输入的标志，替换为 default 的值
     const removedText =
       currentFileText.slice(0, userInput.rangeOffset - inputText.length + 1) +
-      (rulesObj[inputText].default || "") +
+      (rulesObj[inputText].default.join("\n") || "") +
       currentFileText.slice(userInput.rangeOffset + 1);
 
     // 根据规则处理文件
@@ -136,7 +141,7 @@ async function initializeExtension() {
 // 从规则文件夹内加载用户配置
 async function loadConfig() {
   const settings = vscode.workspace.getConfiguration(
-    "template"
+    "snippets-by-extension"
   ) as unknown as Configuration;
   maxInputLength = settings.maxInputLength || 6;
   if (settings.configJsonUrl) {
@@ -270,7 +275,7 @@ function insertTextInComputed(originalText: string, rule: RuleItem) {
     const insertIndex = match.index + match[0].length;
     return (
       originalText.slice(0, insertIndex) +
-      rule[1] +
+      rule[1].join("\n") +
       originalText.slice(insertIndex)
     );
   }
