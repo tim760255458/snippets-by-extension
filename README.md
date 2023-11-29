@@ -6,7 +6,7 @@ A single instruction inserts code snippets in multiple places, based on file ext
 
 When you enter a directive, you can insert the template in multiple places in the file according to the configured rules
 
-![test](/images/test.gif)
+![test](images/test.gif)
 
 <!-- ## Requirements
 
