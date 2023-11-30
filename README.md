@@ -17,7 +17,7 @@ If you have any requirements or dependencies, add a section describing those and
 This extension contributes the following settings:
 
 * `snippets-by-extension.maxInputLength`: The maximum length of the instruction (default 6).
-* `snippets-by-extension.configJsonUrl`: Required, folder address of the configuration file.
+* `snippets-by-extension.configJsonUrl`: Required, folder address of the configuration file. should be added `\` to the end of the address, for example: `D:\CODE\snippets-config\`
 
 ## Configuration description
 
